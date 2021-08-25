@@ -51,8 +51,10 @@ func (t *ttl) startCleanUpJob() {
 					var keys []string
 					t.expiredMap.Range(func(key, _ interface{}) bool {
 						keys = append(keys, key.(string))
+						t.expiredMap.Delete(key)
 						return true
 					})
+
 					t.cache.deleteKeys(keys...)
 					atomic.AddUint32(&t.expiredCount, -uint32(len(keys)))
 				}
