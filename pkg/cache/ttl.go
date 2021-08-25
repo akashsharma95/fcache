@@ -6,22 +6,22 @@ import (
 )
 
 const (
-	gcDuration       = time.Minute * 1
+	gcDuration = time.Minute * 1
 )
 
 // ttl is a background worker which deletes the expired key at some interval
 type ttl struct {
-	cache        *inMemoryCache
-	tick         *time.Ticker
-	shutdown     chan struct{}
+	cache    *inMemoryCache
+	tick     *time.Ticker
+	shutdown chan struct{}
 }
 
 // newTtlJob create new ttlJob for a cache
 func newTtlJob(cache *inMemoryCache) *ttl {
 	return &ttl{
-		cache:      cache,
-		tick:       time.NewTicker(gcDuration),
-		shutdown:   make(chan struct{}, 1),
+		cache:    cache,
+		tick:     time.NewTicker(gcDuration),
+		shutdown: make(chan struct{}, 1),
 	}
 }
 
