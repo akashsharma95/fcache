@@ -9,6 +9,7 @@ import (
 	"inmemcache/pkg/cache"
 )
 
+// handleAPI http request handler for cache api
 func (a *apiServer) handleAPI() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		path := strings.Split(r.URL.Path, "/")
