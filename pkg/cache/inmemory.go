@@ -88,7 +88,7 @@ func (c inMemoryCache) Delete(key string) {
 func (c inMemoryCache) Flush() {
 	for _, b := range c.buckets {
 		b.Lock()
-		for k, _ := range b.items {
+		for k := range b.items {
 			delete(b.items, k)
 		}
 		b.Unlock()

@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -73,4 +74,103 @@ func BenchmarkInMemoryCache_Set(b *testing.B) {
 
 func BenchmarkInMemoryCache_Get(b *testing.B) {
 
+}
+
+func BenchmarkCacheSet(b *testing.B) {
+	const items = 1 << 16
+	c := NewInmemoryCache()
+	defer c.Flush()
+	b.ReportAllocs()
+	b.SetBytes(items)
+	b.RunParallel(func(pb *testing.PB) {
+		k := []rune("aaaa")
+		v := []rune("xyza")
+		for pb.Next() {
+			for i := 0; i < items; i++ {
+				k[0]++
+				if k[0] == 0 {
+					k[1]++
+				}
+				err := c.Set(string(k), string(v))
+				if err != nil {
+					b.Error(err)
+				}
+			}
+		}
+	})
+}
+
+func BenchmarkCacheGet(b *testing.B) {
+	const items = 1 << 16
+	c := NewInmemoryCache()
+	defer c.Flush()
+	k := []rune("aaaa")
+	v := []rune("xyza")
+	for i := 0; i < items; i++ {
+		k[0]++
+		if k[0] == 0 {
+			k[1]++
+		}
+		c.Set(string(k), string(v))
+	}
+
+	b.ReportAllocs()
+	b.SetBytes(items)
+	b.RunParallel(func(pb *testing.PB) {
+		k := []rune("aaaa")
+		for pb.Next() {
+			for i := 0; i < items; i++ {
+				k[0]++
+				if k[0] == 0 {
+					k[1]++
+				}
+				got, err := c.Get(string(k))
+				if err != nil {
+					b.Error(err)
+				}
+
+				if got != string(v) {
+					panic(fmt.Errorf("BUG: invalid value obtained; got %s; want %q", got, v))
+				}
+			}
+		}
+	})
+}
+
+func BenchmarkCacheSetGet(b *testing.B) {
+	const items = 1 << 16
+	c := NewInmemoryCache()
+	defer c.Flush()
+	b.ReportAllocs()
+	b.SetBytes(2 * items)
+	b.RunParallel(func(pb *testing.PB) {
+		k := []rune("aaaa")
+		v := []rune("xyza")
+		for pb.Next() {
+			for i := 0; i < items; i++ {
+				k[0]++
+				if k[0] == 0 {
+					k[1]++
+				}
+				err := c.Set(string(k), string(v))
+				if err != nil {
+					b.Error(err)
+				}
+			}
+			for i := 0; i < items; i++ {
+				k[0]++
+				if k[0] == 0 {
+					k[1]++
+				}
+				got, err := c.Get(string(k))
+				if err != nil {
+					b.Error(err)
+				}
+
+				if got != string(v) {
+					panic(fmt.Errorf("BUG: invalid value obtained; got %s; want %q", got, v))
+				}
+			}
+		}
+	})
 }
