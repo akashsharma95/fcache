@@ -43,6 +43,7 @@ func (t *ttl) startCleanUpJob() {
 			select {
 			case <-t.shutdown:
 				t.tick.Stop()
+				log.Println("cleanup job shutdown")
 				return
 			case <-t.tick.C:
 				expiredLen := t.expiredCount

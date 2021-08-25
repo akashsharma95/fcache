@@ -35,7 +35,7 @@ func main() {
 	api := apiServer{
 		infoLog:  infoLog,
 		errorLog: errLog,
-		cache:    cache.NewCache(),
+		cache:    cache.NewInmemoryCache(),
 	}
 
 	// initialize http server
@@ -61,11 +61,16 @@ func main() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer func() {
-		api.cache.Flush()
+		// call teardown hook if cache implements it
+		if c, ok := api.cache.(interface {
+			Teardown()
+		}); ok {
+			c.Teardown()
+		}
 		cancel()
 	}()
 
 	if err := srv.Shutdown(ctx); err != nil {
-		infoLog.Fatalf("server shutdown error: %+v", err)
+		errLog.Fatalf("server shutdown error: %+v", err)
 	}
 }
