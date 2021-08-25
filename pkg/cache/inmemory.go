@@ -29,7 +29,7 @@ type cacheBucket struct {
 
 // NewInmemoryCache creates new in memory cache instance with fixed number of buckets
 func NewInmemoryCache() Cache {
-	cache := inMemoryCache{
+	cache := &inMemoryCache{
 		buckets: make(map[uint64]*cacheBucket, bucketCount),
 	}
 
@@ -39,14 +39,14 @@ func NewInmemoryCache() Cache {
 		}
 	}
 
-	cache.ttlJob = newTtlJob(&cache)
+	cache.ttlJob = newTtlJob(cache)
 	cache.ttlJob.start()
 
 	return cache
 }
 
 // Get gets the key from one of the bucket and returns error if key is not found
-func (c inMemoryCache) Get(key string) (string, error) {
+func (c *inMemoryCache) Get(key string) (string, error) {
 	bucket := c.getBucket(key)
 	bucket.RLock()
 	defer bucket.RUnlock()
@@ -63,12 +63,12 @@ func (c inMemoryCache) Get(key string) (string, error) {
 }
 
 // Set stores the key and value in cache with default ttl of 30 mins
-func (c inMemoryCache) Set(key string, value string) error {
+func (c *inMemoryCache) Set(key string, value string) error {
 	return c.SetWithTtl(key, value, defaultTTL)
 }
 
 // SetWithTtl stores the key and value in cache with given ttl value
-func (c inMemoryCache) SetWithTtl(key string, value string, duration time.Duration) error {
+func (c *inMemoryCache) SetWithTtl(key string, value string, duration time.Duration) error {
 	bucket := c.getBucket(key)
 	bucket.Lock()
 	defer bucket.Unlock()
@@ -79,12 +79,12 @@ func (c inMemoryCache) SetWithTtl(key string, value string, duration time.Durati
 }
 
 // Delete removes a key from cache
-func (c inMemoryCache) Delete(key string) {
+func (c *inMemoryCache) Delete(key string) {
 	c.deleteKeys(key)
 }
 
 // Flush clears the cache
-func (c inMemoryCache) Flush() {
+func (c *inMemoryCache) Flush() {
 	for _, bucket := range c.buckets {
 		bucket.Lock()
 		for k := range bucket.items {
@@ -95,13 +95,13 @@ func (c inMemoryCache) Flush() {
 }
 
 // Teardown clears the cache and stops the ttl background job
-func (c inMemoryCache) Teardown() {
+func (c *inMemoryCache) Teardown() {
 	c.Flush()
 	c.ttlJob.shutdown <- struct{}{}
 }
 
 // deleteKeys helper function to delete the list of keys from cache
-func (c inMemoryCache) deleteKeys(keys ...string) {
+func (c *inMemoryCache) deleteKeys(keys ...string) {
 	for _, k := range keys {
 		bucket := c.getBucket(k)
 
@@ -112,7 +112,7 @@ func (c inMemoryCache) deleteKeys(keys ...string) {
 }
 
 // getBucket get the bucket where key is stored using consistent hashing
-func (c inMemoryCache) getBucket(key string) *cacheBucket {
+func (c *inMemoryCache) getBucket(key string) *cacheBucket {
 	hash := xxhash.Sum64([]byte(key))
 	bucketKey := hash % bucketCount
 	return c.buckets[bucketKey]

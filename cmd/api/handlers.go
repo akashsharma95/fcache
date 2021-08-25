@@ -15,6 +15,7 @@ func (a *apiServer) handleAPI() http.HandlerFunc {
 		path := strings.Split(r.URL.Path, "/")
 		if len(path) != 3 {
 			w.WriteHeader(http.StatusBadRequest)
+			a.errorLog.Fatalf("incorrect path param expected len 3 got: %d", len(path))
 			return
 		}
 
