@@ -22,7 +22,7 @@ type cacheBucket struct {
 	items map[string]*item
 }
 
-func NewCache() Cache {
+func NewInmemoryCache() Cache {
 	cache := inMemoryCache{
 		buckets: make(map[uint64]*cacheBucket, bucketCount),
 	}
@@ -76,11 +76,18 @@ func (c inMemoryCache) Delete(key string) {
 }
 
 func (c inMemoryCache) Flush() {
-	for k, b := range c.buckets {
+	for _, b := range c.buckets {
 		b.Lock()
-		delete(c.buckets, k)
+		for k, _ := range b.items {
+			delete(b.items, k)
+		}
 		b.Unlock()
 	}
+}
+
+func (c inMemoryCache) Teardown() {
+	c.Flush()
+	c.ttl.shutdown <- struct{}{}
 }
 
 func (c inMemoryCache) deleteKeys(keys ...string) {
