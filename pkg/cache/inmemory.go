@@ -24,7 +24,7 @@ type inMemoryCache struct {
 // cacheBucket is concurrent safe map
 type cacheBucket struct {
 	sync.RWMutex
-	items map[string]*item
+	items map[string]item
 }
 
 // NewInmemoryCache creates new in memory cache instance with fixed number of buckets
@@ -35,13 +35,12 @@ func NewInmemoryCache() Cache {
 
 	for idx := uint64(0); idx < bucketCount; idx++ {
 		cache.buckets[idx] = &cacheBucket{
-			items: make(map[string]*item),
+			items: make(map[string]item),
 		}
 	}
 
-	t := newTtlJob(&cache)
-	t.start()
-	cache.ttlJob = t
+	cache.ttlJob = newTtlJob(&cache)
+	cache.ttlJob.start()
 
 	return cache
 }
@@ -52,15 +51,15 @@ func (c inMemoryCache) Get(key string) (string, error) {
 	bucket.RLock()
 	defer bucket.RUnlock()
 
-	if bucket.items[key] == nil {
+	if value, exists := bucket.items[key]; !exists {
 		return "", ErrorKeyNotFound
-	}
+	} else {
+		if value.isExpired() {
+			return "", ErrorKeyNotFound
+		}
 
-	if bucket.items[key].isExpired() {
-		return "", ErrorKeyNotFound
+		return value.getValue(), nil
 	}
-
-	return bucket.items[key].getValue(), nil
 }
 
 // Set stores the key and value in cache with default ttl of 30 mins
@@ -86,12 +85,12 @@ func (c inMemoryCache) Delete(key string) {
 
 // Flush clears the cache
 func (c inMemoryCache) Flush() {
-	for _, b := range c.buckets {
-		b.Lock()
-		for k := range b.items {
-			delete(b.items, k)
+	for _, bucket := range c.buckets {
+		bucket.Lock()
+		for k := range bucket.items {
+			delete(bucket.items, k)
 		}
-		b.Unlock()
+		bucket.Unlock()
 	}
 }
 

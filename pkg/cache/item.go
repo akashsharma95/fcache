@@ -9,8 +9,8 @@ type item struct {
 }
 
 // newItem create new item with value and expire-at
-func newItem(value string, expireAt time.Time) *item {
-	return &item{
+func newItem(value string, expireAt time.Time) item {
+	return item{
 		value:    value,
 		expireAt: expireAt,
 	}

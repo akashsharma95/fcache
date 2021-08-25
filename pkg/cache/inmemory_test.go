@@ -68,14 +68,6 @@ func TestInMemoryCache_Flush(t *testing.T) {
 	assert.Equal(t, "", v)
 }
 
-func BenchmarkInMemoryCache_Set(b *testing.B) {
-
-}
-
-func BenchmarkInMemoryCache_Get(b *testing.B) {
-
-}
-
 func BenchmarkCacheSet(b *testing.B) {
 	const items = 1 << 16
 	c := NewInmemoryCache()
@@ -83,15 +75,15 @@ func BenchmarkCacheSet(b *testing.B) {
 	b.ReportAllocs()
 	b.SetBytes(items)
 	b.RunParallel(func(pb *testing.PB) {
-		k := []rune("aaaa")
-		v := []rune("xyza")
+		k := []byte("\x00\x00\x00\x00")
+		v := "value"
 		for pb.Next() {
 			for i := 0; i < items; i++ {
 				k[0]++
 				if k[0] == 0 {
 					k[1]++
 				}
-				err := c.Set(string(k), string(v))
+				err := c.Set(string(k), v)
 				if err != nil {
 					b.Error(err)
 				}
@@ -104,20 +96,23 @@ func BenchmarkCacheGet(b *testing.B) {
 	const items = 1 << 16
 	c := NewInmemoryCache()
 	defer c.Flush()
-	k := []rune("aaaa")
-	v := []rune("xyza")
+	k := []byte("\x00\x00\x00\x00")
+	v := "value"
 	for i := 0; i < items; i++ {
 		k[0]++
 		if k[0] == 0 {
 			k[1]++
 		}
-		c.Set(string(k), string(v))
+		err := c.Set(string(k), v)
+		if err != nil {
+			b.Error(err)
+		}
 	}
 
 	b.ReportAllocs()
 	b.SetBytes(items)
 	b.RunParallel(func(pb *testing.PB) {
-		k := []rune("aaaa")
+		k := []byte("\x00\x00\x00\x00")
 		for pb.Next() {
 			for i := 0; i < items; i++ {
 				k[0]++
@@ -129,7 +124,7 @@ func BenchmarkCacheGet(b *testing.B) {
 					b.Error(err)
 				}
 
-				if got != string(v) {
+				if got != v {
 					panic(fmt.Errorf("BUG: invalid value obtained; got %s; want %q", got, v))
 				}
 			}
@@ -144,15 +139,15 @@ func BenchmarkCacheSetGet(b *testing.B) {
 	b.ReportAllocs()
 	b.SetBytes(2 * items)
 	b.RunParallel(func(pb *testing.PB) {
-		k := []rune("aaaa")
-		v := []rune("xyza")
+		k := []byte("\x00\x00\x00\x00")
+		v := "value"
 		for pb.Next() {
 			for i := 0; i < items; i++ {
 				k[0]++
 				if k[0] == 0 {
 					k[1]++
 				}
-				err := c.Set(string(k), string(v))
+				err := c.Set(string(k), v)
 				if err != nil {
 					b.Error(err)
 				}
@@ -167,7 +162,7 @@ func BenchmarkCacheSetGet(b *testing.B) {
 					b.Error(err)
 				}
 
-				if got != string(v) {
+				if got != v {
 					panic(fmt.Errorf("BUG: invalid value obtained; got %s; want %q", got, v))
 				}
 			}
