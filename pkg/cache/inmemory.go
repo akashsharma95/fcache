@@ -50,7 +50,6 @@ func (c inMemoryCache) Get(key string) (string, error) {
 	}
 
 	if bucket.items[key].isExpired() {
-		c.ttl.addExpiredKey(key)
 		return "", ErrorKeyNotFound
 	}
 
