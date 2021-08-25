@@ -12,7 +12,7 @@ func TestNewInmemoryCache(t *testing.T) {
 	assert.NotNil(t, c)
 
 	assert.NotNil(t, c.(inMemoryCache).buckets)
-	assert.NotNil(t, c.(inMemoryCache).ttl)
+	assert.NotNil(t, c.(inMemoryCache).ttlJob)
 }
 
 func TestInMemoryCache_GetSet(t *testing.T) {
