@@ -12,8 +12,8 @@ func TestNewInmemoryCache(t *testing.T) {
 	c := NewInmemoryCache()
 	assert.NotNil(t, c)
 
-	assert.NotNil(t, c.(inMemoryCache).buckets)
-	assert.NotNil(t, c.(inMemoryCache).ttlJob)
+	assert.NotNil(t, c.(*inMemoryCache).buckets)
+	assert.NotNil(t, c.(*inMemoryCache).ttlJob)
 }
 
 func TestInMemoryCache_GetSet(t *testing.T) {
@@ -45,7 +45,7 @@ func TestInMemoryCache_SetWithTtl(t *testing.T) {
 
 	err := c.SetWithTtl("key", "value", time.Minute*10)
 	assert.NoError(t, err)
-	bucket := c.(inMemoryCache).getBucket("key")
+	bucket := c.(*inMemoryCache).getBucket("key")
 	if !bucket.items["key"].expireAt.After(time.Now()) {
 		t.Error("expireAt should be greater than current time")
 	}

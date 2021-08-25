@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"log"
 	"time"
 )
 
@@ -27,15 +26,16 @@ func newTtlJob(cache *inMemoryCache) *ttl {
 
 // start the ttl job in separate go-routine
 func (t *ttl) start() {
-	log.Println("starting cleanup job")
 	go func() {
 		for {
 			select {
 			case <-t.shutdown:
 				t.tick.Stop()
-				log.Println("cleanup job shutdown")
 				return
+
 			case <-t.tick.C:
+				// iterate over all the buckets and remove the expired keys
+				// can be optimized using priority queue with increased code complexity
 				var keys []string
 				for _, bucket := range t.cache.buckets {
 					bucket.RLock()
