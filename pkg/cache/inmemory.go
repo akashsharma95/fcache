@@ -11,9 +11,9 @@ import (
 // defaultTTL default expiry time for the cache
 const defaultTTL = time.Minute * 30
 
-// TODO: best value of this factor?
-// bucketCount is number of buckets/shards to create for cache is based on number of CPU * factor 4
-var bucketCount = uint64(runtime.NumCPU() * 4)
+// bucketCount is number of buckets/shards to create for cache is based on number of CPU * factor 8
+// factor 8 was chosen by running benchmarks
+var bucketCount = uint64(runtime.NumCPU() * 8)
 
 // inMemoryCache stores key value pair in sharded map
 type inMemoryCache struct {
@@ -39,6 +39,7 @@ func NewInmemoryCache() Cache {
 		}
 	}
 
+	// based on different cache eviction policy we can have background workers for cleaning cache
 	cache.ttlJob = newTtlJob(cache)
 	cache.ttlJob.start()
 
@@ -113,7 +114,7 @@ func (c *inMemoryCache) deleteKeys(keys ...string) {
 
 // getBucket get the bucket where key is stored using consistent hashing
 func (c *inMemoryCache) getBucket(key string) *cacheBucket {
-	hash := xxhash.Sum64([]byte(key))
+	hash := xxhash.Sum64String(key)
 	bucketKey := hash % bucketCount
 	return c.buckets[bucketKey]
 }
