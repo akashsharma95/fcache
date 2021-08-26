@@ -10,7 +10,7 @@ import (
 )
 
 func TestNewInmemoryCache(t *testing.T) {
-	c := NewInmemoryCache()
+	c := NewInmemoryCache(WithTtlGc(time.Minute * 30))
 	assert.NotNil(t, c)
 
 	assert.NotNil(t, c.(*inMemoryCache).buckets)
@@ -47,9 +47,33 @@ func TestInMemoryCache_SetWithTtl(t *testing.T) {
 	err := c.SetWithTtl("key", "value", time.Minute*10)
 	assert.NoError(t, err)
 	bucket := c.(*inMemoryCache).getBucket("key")
+	bucket.RLock()
+	defer bucket.RUnlock()
 	if !bucket.items["key"].expireAt.After(time.Now()) {
 		t.Error("expireAt should be greater than current time")
 	}
+}
+
+func TestInMemoryCache_SetWithTtlAndGc(t *testing.T) {
+	c := NewInmemoryCache(WithTtlGc(time.Second * 1))
+
+	// test if cache object was GCed
+	err := c.SetWithTtl("key", "value", time.Second*1)
+	assert.NoError(t, err)
+	time.Sleep(time.Second * 2)
+	bucket := c.(*inMemoryCache).getBucket("key")
+	bucket.RLock()
+	assert.Empty(t, bucket.items["key"])
+	bucket.RUnlock()
+
+	// test if cache object is present
+	err = c.SetWithTtl("key", "value", time.Minute*1)
+	assert.NoError(t, err)
+	time.Sleep(time.Second * 2)
+	bucket = c.(*inMemoryCache).getBucket("key")
+	bucket.RLock()
+	assert.NotEmpty(t, bucket.items["key"])
+	bucket.RUnlock()
 }
 
 func TestInMemoryCache_Flush(t *testing.T) {

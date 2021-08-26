@@ -6,6 +6,6 @@ build:
 	@CGO_ENABLED=0 GOOS=$(UNAME_OS) GOARCH=$(UNAME_ARCH) go build -ldflags="-w -s" -o /go/bin/inmemcache ./cmd/api
 
 run:
-	go run main.go
+	go run ./cmd/api
 
 all: build

@@ -27,8 +27,10 @@ type cacheBucket struct {
 	items map[string]item
 }
 
+type InMemCacheOption func(*inMemoryCache)
+
 // NewInmemoryCache creates new in memory cache instance with fixed number of buckets
-func NewInmemoryCache() Cache {
+func NewInmemoryCache(opts ...InMemCacheOption) Cache {
 	cache := &inMemoryCache{
 		buckets: make(map[uint64]*cacheBucket, bucketCount),
 	}
@@ -39,11 +41,19 @@ func NewInmemoryCache() Cache {
 		}
 	}
 
-	// based on different cache eviction policy we can have background workers for cleaning cache
-	cache.ttlJob = newTtlJob(cache)
-	cache.ttlJob.start()
+	for _, opt := range opts {
+		opt(cache)
+	}
 
 	return cache
+}
+
+func WithTtlGc(duration time.Duration) InMemCacheOption {
+	return func(cache *inMemoryCache) {
+		// based on different cache eviction policy we can have background workers for cleaning cache
+		cache.ttlJob = newTtlJob(cache, WithGcDuration(duration))
+		cache.ttlJob.start()
+	}
 }
 
 // Get gets the key from one of the bucket and returns error if key is not found
@@ -52,15 +62,16 @@ func (c *inMemoryCache) Get(key string) (string, error) {
 	bucket.RLock()
 	defer bucket.RUnlock()
 
-	if value, exists := bucket.items[key]; !exists {
+	value, exists := bucket.items[key]
+	if !exists {
 		return "", ErrorKeyNotFound
-	} else {
-		if value.isExpired() {
-			return "", ErrorKeyNotFound
-		}
-
-		return value.getValue(), nil
 	}
+
+	if value.isExpired() {
+		return "", ErrorKeyNotFound
+	}
+
+	return value.getValue(), nil
 }
 
 // Set stores the key and value in cache with default ttl of 30 mins

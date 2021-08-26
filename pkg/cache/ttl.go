@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	gcDuration = time.Minute * 1
+	defaultGcDuration = time.Minute * 1
 )
 
 // ttl is a background worker which deletes the expired key at some interval
@@ -15,12 +15,30 @@ type ttl struct {
 	shutdown chan struct{}
 }
 
+type TtlOption func(*ttl)
+
 // newTtlJob create new ttlJob for a cache
-func newTtlJob(cache *inMemoryCache) *ttl {
-	return &ttl{
+func newTtlJob(cache *inMemoryCache, opts ...TtlOption) *ttl {
+	ttlJob := &ttl{
 		cache:    cache,
-		tick:     time.NewTicker(gcDuration),
+		tick:     time.NewTicker(defaultGcDuration),
 		shutdown: make(chan struct{}, 1),
+	}
+
+	for _, opt := range opts {
+		opt(ttlJob)
+	}
+
+	return ttlJob
+}
+
+func WithGcDuration(duration time.Duration) TtlOption {
+	return func(t *ttl) {
+		if t.tick != nil {
+			t.tick.Reset(duration)
+		} else {
+			t.tick = time.NewTicker(duration)
+		}
 	}
 }
 
