@@ -17,11 +17,11 @@ func newItem(value string, expireAt time.Time) item {
 }
 
 // getValue get the value
-func (i *item) getValue() string {
+func (i item) getValue() string {
 	return i.value
 }
 
 // isExpired returns true if the item is expired based on expireAt value
-func (i *item) isExpired() bool {
+func (i item) isExpired() bool {
 	return i.expireAt.Before(time.Now())
 }

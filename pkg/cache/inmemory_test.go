@@ -69,7 +69,7 @@ func TestInMemoryCache_Flush(t *testing.T) {
 	assert.Equal(t, "", v)
 }
 
-func BenchmarkCacheSet(b *testing.B) {
+func BenchmarkInMemoryCache_Set(b *testing.B) {
 	const items = 1 << 16
 	c := NewInmemoryCache()
 	defer c.Flush()
@@ -93,7 +93,7 @@ func BenchmarkCacheSet(b *testing.B) {
 	})
 }
 
-func BenchmarkCacheGet(b *testing.B) {
+func BenchmarkInMemoryCache_Get(b *testing.B) {
 	const items = 1 << 16
 	c := NewInmemoryCache()
 	defer c.Flush()
@@ -133,7 +133,7 @@ func BenchmarkCacheGet(b *testing.B) {
 	})
 }
 
-func BenchmarkCacheSetGet(b *testing.B) {
+func BenchmarkInMemoryCache_SetGet(b *testing.B) {
 	const items = 1 << 16
 	c := NewInmemoryCache()
 	defer c.Flush()
@@ -171,7 +171,7 @@ func BenchmarkCacheSetGet(b *testing.B) {
 	})
 }
 
-func BenchmarkStdMapSet(b *testing.B) {
+func BenchmarkStdMap_Set(b *testing.B) {
 	const items = 1 << 16
 	m := make(map[string]string)
 	var mu sync.Mutex
@@ -194,7 +194,7 @@ func BenchmarkStdMapSet(b *testing.B) {
 	})
 }
 
-func BenchmarkStdMapGet(b *testing.B) {
+func BenchmarkStdMap_Get(b *testing.B) {
 	const items = 1 << 16
 	m := make(map[string]string)
 	k := []byte("\x00\x00\x00\x00")
@@ -229,7 +229,7 @@ func BenchmarkStdMapGet(b *testing.B) {
 	})
 }
 
-func BenchmarkStdMapSetGet(b *testing.B) {
+func BenchmarkStdMap_SetGet(b *testing.B) {
 	const items = 1 << 16
 	m := make(map[string]string)
 	var mu sync.RWMutex
@@ -264,7 +264,7 @@ func BenchmarkStdMapSetGet(b *testing.B) {
 	})
 }
 
-func BenchmarkSyncMapSet(b *testing.B) {
+func BenchmarkSyncMap_Set(b *testing.B) {
 	const items = 1 << 16
 	m := sync.Map{}
 	b.ReportAllocs()
@@ -284,7 +284,7 @@ func BenchmarkSyncMapSet(b *testing.B) {
 	})
 }
 
-func BenchmarkSyncMapGet(b *testing.B) {
+func BenchmarkSyncMap_Get(b *testing.B) {
 	const items = 1 << 16
 	m := sync.Map{}
 	k := []byte("\x00\x00\x00\x00")
@@ -316,7 +316,7 @@ func BenchmarkSyncMapGet(b *testing.B) {
 	})
 }
 
-func BenchmarkSyncMapSetGet(b *testing.B) {
+func BenchmarkSyncMap_SetGet(b *testing.B) {
 	const items = 1 << 16
 	m := sync.Map{}
 	b.ReportAllocs()
