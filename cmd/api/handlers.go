@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -14,8 +15,12 @@ func (a *apiServer) handleAPI() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		path := strings.Split(r.URL.Path, "/")
 		if len(path) != 3 {
+			errMsg := fmt.Errorf("incorrect path param expected len 3 got: %d", len(path))
+			a.errorLog.Println(errMsg)
+
 			w.WriteHeader(http.StatusBadRequest)
-			a.errorLog.Fatalf("incorrect path param expected len 3 got: %d", len(path))
+			_, _ = w.Write([]byte(errMsg.Error()))
+
 			return
 		}
 
@@ -25,41 +30,54 @@ func (a *apiServer) handleAPI() http.HandlerFunc {
 			if err != nil {
 				if err == cache.ErrorKeyNotFound {
 					w.WriteHeader(http.StatusNotFound)
-					return
-				} else if err != nil {
-					w.WriteHeader(http.StatusInternalServerError)
-					a.errorLog.Fatalf("error occurred processing the request: %w", err)
+
 					return
 				}
+				errMsg := fmt.Errorf("error occurred processing the request: %w", err)
+				a.errorLog.Println(errMsg)
+
+				w.WriteHeader(http.StatusInternalServerError)
+				_, _ = w.Write([]byte(errMsg.Error()))
+
+				return
 			}
 			w.WriteHeader(http.StatusOK)
 			_, _ = w.Write([]byte(value))
 
 		case http.MethodPost:
 			requestBody, err := ioutil.ReadAll(r.Body)
+			if err != nil {
+				errMsg := fmt.Errorf("error occurred while reading the body: %w", err)
+				a.errorLog.Println(errMsg)
 
-			// validate if request body contains valid utf8 sequence
-			valid := utf8.Valid(requestBody)
-			if !valid {
 				w.WriteHeader(http.StatusBadRequest)
-				a.errorLog.Fatal("invalid utf8 sequence as body")
+				_, _ = w.Write([]byte(errMsg.Error()))
+
 				return
 			}
 
-			if err != nil {
+			// validate if request body contains valid utf8 sequence
+			if !utf8.Valid(requestBody) {
+				errMsg := fmt.Errorf("invalid utf8 sequence as body")
+				a.errorLog.Println(errMsg)
+
 				w.WriteHeader(http.StatusBadRequest)
-				a.errorLog.Fatalf("error occurred while reading the body: %w", err)
+				_, _ = w.Write([]byte(errMsg.Error()))
+
 				return
 			}
 
 			err = a.cache.Set(path[2], string(requestBody))
 			if err != nil {
 				w.WriteHeader(http.StatusOK)
+
 				return
 			}
 
 		default:
-			w.WriteHeader(http.StatusBadRequest)
+			w.WriteHeader(http.StatusMethodNotAllowed)
+
+			return
 		}
 	}
 }

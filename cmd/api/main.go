@@ -55,7 +55,7 @@ func main() {
 			errLog.Fatal(err)
 		}
 	}()
-	infoLog.Printf("http listener started at: %s", srvAddr)
+	infoLog.Printf("http listener started at: %s \n^C to exit", srvAddr)
 
 	<-interrupt
 	infoLog.Printf("initiating graceful shutdown")
