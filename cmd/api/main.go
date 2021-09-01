@@ -36,7 +36,7 @@ func main() {
 	api := apiServer{
 		infoLog:  infoLog,
 		errorLog: errLog,
-		cache:    cache.NewInmemoryCache(),
+		cache:    cache.NewInmemoryCache(cache.WithTtlGc(time.Minute * 30)),
 	}
 
 	// initialize http server

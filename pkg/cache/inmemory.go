@@ -125,6 +125,7 @@ func (c *inMemoryCache) deleteKeys(keys ...string) {
 
 // getBucket get the bucket where key is stored using consistent hashing
 func (c *inMemoryCache) getBucket(key string) *cacheBucket {
+	// hash := utils.MemHashString(key)
 	hash := xxhash.Sum64String(key)
 	bucketKey := hash % bucketCount
 	return c.buckets[bucketKey]
